@@ -69,8 +69,33 @@ export const fullAddress = dealership.address.street + ', ' + dealership.address
 export const directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(fullAddress);
 export const mapEmbedUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(fullAddress) + '&output=embed';
 
-export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
+/**
+ * The canonical origin for this deployment.
+ *
+ * Every canonical link, Open Graph URL and sitemap entry is built from this, so
+ * getting it wrong is not cosmetic: an origin of localhost tells search engines
+ * that every page on the site lives on a machine they cannot reach.
+ *
+ * `NEXT_PUBLIC_SITE_URL` stays the explicit override — set it to the real
+ * domain. When it is missing, Vercel's own project production domain is used
+ * rather than falling straight through to localhost, which keeps a deployed
+ * site indexable even if nobody remembers to set the variable. Localhost
+ * remains the last resort, where it is actually correct: local development.
+ */
+function resolveSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  // Vercel injects this at build and run time: the project's stable production
+  // domain, identical across preview and production deployments — which is
+  // exactly what a canonical URL should point at.
+  const vercelProduction = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelProduction) return `https://${vercelProduction.replace(/\/$/, '')}`;
+
+  return 'http://localhost:3000';
+}
+
+export const siteUrl = resolveSiteUrl();
 
 export const siteMeta = {
   name: 'Long Drive Motors',

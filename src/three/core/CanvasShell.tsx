@@ -36,6 +36,13 @@ interface CanvasShellProps {
  * Individual scenes (hero, showroom, vehicle viewer) are composed as children
  * in their respective phases — this shell stays scene-agnostic.
  */
+/**
+ * Hoisted so its identity never changes between renders: R3F re-applies the
+ * `camera` prop when it does, which would stomp on any fov a scene's own rig
+ * has set for the current frame shape.
+ */
+const DEFAULT_CAMERA = { position: [0, 1.4, 6], fov: 45 } as const;
+
 export function CanvasShell({
   children,
   fallback,
@@ -68,7 +75,7 @@ export function CanvasShell({
               toneMapping: THREE.ACESFilmicToneMapping,
               toneMappingExposure: 1.05,
             }}
-            camera={{ position: [0, 1.4, 6], fov: 45 }}
+            camera={DEFAULT_CAMERA}
           >
             {children}
           </Canvas>

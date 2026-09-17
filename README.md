@@ -17,7 +17,9 @@ npm run dev      # http://localhost:3000
 ```
 
 Set `NEXT_PUBLIC_SITE_URL` in `.env.local` so canonical URLs, the sitemap and
-Open Graph tags resolve to your domain.
+Open Graph tags resolve to your domain. On Vercel it is optional — the project's
+production domain is used when the variable is absent, so a deployment is never
+left advertising `localhost` to search engines.
 
 | Script | Purpose |
 |---|---|
@@ -63,6 +65,19 @@ src/
 - **Six cinematic camera shots** (`heroShots.ts`) are sampled by scroll progress
   and damped per-frame. GSAP writes to a mutable proxy rather than React state,
   so the render loop never re-renders the tree.
+- **Portrait gets its own shot list, not a squeezed one.** `fov` is vertical, so
+  horizontal coverage collapses as the frame narrows: the landscape shots span
+  16.5m across at 16:9 but 4.3m on a 390x844 phone, and the vehicle is 4.6m
+  long. Dollying back to compensate needs ~3.8x the distance, which puts the
+  establishing shot outside the showroom walls. So portrait shots are declared
+  as framing intent — orbit angle, how many metres the frame should span, where
+  the subject sits vertically — and the distance is solved per-device from the
+  live aspect ratio. The composition then holds identically from a 375x667 SE to
+  a 9:20 Android to an iPad upright.
+- **On a phone the hero carries no text while the camera is moving.** The
+  headline, copy, CTAs and the readability scrim all fade up together over the
+  last third of the scroll. A car is a wide subject on a tall screen; type laid
+  over it either covers it or shrinks it.
 - **The camera moves or the car turns — never both.** Rotating both drags the
   subject out of frame on close-ups, so the car only turns on the static
   showroom turntable.
@@ -83,9 +98,10 @@ src/
 
 ## Verified
 
-`tsc --noEmit` clean · ESLint clean · production build clean · 25 routes
+`tsc --noEmit` clean · ESLint clean · production build clean · 36 routes
 prerendered · all routes return 200 and unknown paths 404 · image pipeline
-serving optimized vehicle art.
+serving optimized vehicle art · social cards render as real 1200x630 PNGs on
+every route.
 
 ## Not yet built
 

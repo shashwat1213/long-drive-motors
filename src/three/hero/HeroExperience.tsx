@@ -8,6 +8,7 @@ import { useCapability } from '@/hooks/useCapability';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ensureGsap, gsap, ScrollTrigger } from '@/animation/gsap';
 import { primaryCta } from '@/config/navigation';
+import { cn } from '@/lib/utils/format';
 
 /** Decorative scroll captions (aria-hidden — purely visual storytelling). */
 const captions = [
@@ -16,6 +17,23 @@ const captions = [
   'Step inside.',
   'Find your next drive.',
 ];
+
+/**
+ * Frame shape the hero's layout branches on. Kept in sync with
+ * PORTRAIT_ASPECT_MAX (the camera) and the `tall` Tailwind screen (the markup),
+ * so all three agree on where the portrait composition begins.
+ */
+const TALL_FRAME = '(max-aspect-ratio: 95/100)';
+const WIDE_FRAME = '(min-aspect-ratio: 95/100)';
+
+/**
+ * On a tall frame the hero carries no text at all while the camera sequence is
+ * running — the vehicle gets the whole screen. The headline, copy and CTAs fade
+ * up over this window at the end of the scroll, together with the scrim that
+ * makes them readable.
+ */
+const REVEAL_START = 0.68;
+const REVEAL_END = 0.9;
 
 /**
  * three.js is pulled in only on the client, and only once the hero mounts —
@@ -32,6 +50,9 @@ export function HeroExperience() {
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const heroBlockRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
   const captionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const progress = useRef({ value: 0 });
 
@@ -42,7 +63,7 @@ export function HeroExperience() {
   const motionEnabled = capReady && !reducedMotion;
   const showLoader = capReady && !isFallback && !sceneReady;
 
-  // Scroll wiring: maps scroll progress to the camera proxy + caption fades.
+  // Scroll wiring: maps scroll progress to the camera proxy + the copy reveal.
   useLayoutEffect(() => {
     if (!capReady) return;
     const section = sectionRef.current;
@@ -59,7 +80,10 @@ export function HeroExperience() {
     }
 
     ensureGsap();
-    const ctx = gsap.context(() => {
+    const mm = gsap.matchMedia();
+
+    // Wide frames — the reference composition.
+    mm.add(WIDE_FRAME, () => {
       ScrollTrigger.create({
         trigger: section,
         start: 'top top',
@@ -89,19 +113,68 @@ export function HeroExperience() {
           });
         },
       });
-    }, section);
+    });
 
-    return () => ctx.revert();
+    // Tall frames — nothing but the vehicle until the sequence resolves.
+    mm.add(TALL_FRAME, () => {
+      const block = heroBlockRef.current;
+      const scrim = scrimRef.current;
+      const cta = ctaRef.current;
+      const hint = hintRef.current;
+
+      // Captions belong to the wide composition; a phone frame has no room to
+      // put type over the vehicle without covering it.
+      captionRefs.current.forEach((el) => {
+        if (el) el.style.opacity = '0';
+      });
+
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1,
+        onUpdate: (self) => {
+          const p = self.progress;
+          progress.current.value = p;
+
+          const raw = gsap.utils.clamp(0, 1, (p - REVEAL_START) / (REVEAL_END - REVEAL_START));
+          const reveal = raw * raw * (3 - 2 * raw);
+
+          if (block) {
+            block.style.opacity = String(reveal);
+            block.style.transform = `translateY(${(1 - reveal) * 28}px)`;
+          }
+          // The scrim exists to make type legible; while there is no type it
+          // would only be dimming the car, so it arrives with the copy.
+          if (scrim) scrim.style.opacity = String(reveal);
+          // Keep the CTAs untappable until they are actually on screen.
+          if (cta) cta.style.pointerEvents = reveal > 0.6 ? 'auto' : 'none';
+          if (hint) hint.style.opacity = String(1 - reveal);
+        },
+      });
+
+      // Restore inline state when the frame stops being tall (device rotated).
+      return () => {
+        if (block) {
+          block.style.opacity = '';
+          block.style.transform = '';
+        }
+        if (scrim) scrim.style.opacity = '';
+        if (cta) cta.style.pointerEvents = '';
+        if (hint) hint.style.opacity = '';
+      };
+    });
+
+    return () => mm.revert();
   }, [capReady, motionEnabled]);
 
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-16"
-      style={{ height: motionEnabled ? '520vh' : '100vh' }}
+      className={cn('relative -mt-16', motionEnabled ? 'hero-scroll' : 'hero-stage')}
       aria-label="Long Drive Motors immersive hero"
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="hero-stage sticky top-0 w-full overflow-hidden">
         {/* 3D canvas (or static fallback on unsupported devices) */}
         <div className="absolute inset-0">
           <HeroCanvas
@@ -115,6 +188,7 @@ export function HeroExperience() {
 
         {/* Readability scrim */}
         <div
+          ref={scrimRef}
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
@@ -123,7 +197,7 @@ export function HeroExperience() {
           }}
         />
 
-        {/* Decorative scroll-story captions (visual only) */}
+        {/* Decorative scroll-story captions (visual only, wide frames) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {captions.map((caption, i) => (
             <div
@@ -139,7 +213,7 @@ export function HeroExperience() {
         </div>
 
         {/* Persistent, accessible hero content (single H1 + primary CTAs) */}
-        <div className="pointer-events-none absolute inset-0 flex items-end pb-[12vh]">
+        <div className="pointer-events-none absolute inset-0 flex items-end pb-[12vh] tall:pb-[9vh]">
           <div ref={heroBlockRef} className="container-content">
             <div className="max-w-2xl">
               <span className="eyebrow">
@@ -151,11 +225,14 @@ export function HeroExperience() {
                 <br />
                 <span className="text-fog-400">starts here.</span>
               </h1>
-              <p className="mt-5 max-w-prose text-lg leading-relaxed text-fog-200">
+              <p className="mt-5 max-w-prose text-lg leading-relaxed text-fog-200 tall:mt-4 tall:max-w-[34ch] tall:text-base">
                 Step into an immersive showroom, explore hand-picked vehicles in 3D, and discover a
                 better way to buy pre-owned.
               </p>
-              <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-3">
+              <div
+                ref={ctaRef}
+                className="pointer-events-auto mt-8 flex flex-wrap items-center gap-3 tall:mt-6"
+              >
                 <Button href={primaryCta.href} size="lg">
                   Explore Showroom
                 </Button>
@@ -163,20 +240,26 @@ export function HeroExperience() {
                   Browse Inventory
                 </Button>
               </div>
-              <p className="mt-8 text-xs uppercase tracking-eyebrow text-fog-500">
+              {/* Repeated by the trust badges further down the page — on a phone
+                  the vertical room is better spent on the vehicle. */}
+              <p className="mt-8 text-xs uppercase tracking-eyebrow text-fog-500 tall:hidden">
                 Hand-picked · Inspected · Trusted
               </p>
             </div>
           </div>
         </div>
 
-        {/* Scroll hint */}
+        {/* Scroll hint — wordless on tall frames, where the hero holds no type */}
         {motionEnabled && (
           <div
+            ref={hintRef}
             aria-hidden
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-fog-500"
+            className="absolute bottom-6 left-1/2 flex -translate-x-1/2 justify-center"
           >
-            Scroll to explore
+            <span className="text-[10px] uppercase tracking-[0.3em] text-fog-500 tall:hidden">
+              Scroll to explore
+            </span>
+            <span className="scroll-cue hidden tall:block" />
           </div>
         )}
 

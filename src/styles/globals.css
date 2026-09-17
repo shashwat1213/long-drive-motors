@@ -87,3 +87,159 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Hero stage sizing.
+ * `svh` is the viewport at its smallest — with the mobile browser chrome shown.
+ * Using it means the hero composition is never partly hidden behind a URL bar,
+ * and, unlike `dvh`, it does not resize (and re-layout the canvas) every time
+ * that bar collapses on scroll. `vh` first as the fallback for older engines.
+ */
+.hero-stage {
+  height: 100vh;
+  height: 100svh;
+}
+
+/* Scroll length of the pinned hero sequence. Shorter on a phone: the same six
+   shots, but a thumb covers far less ground per swipe than a scroll wheel. */
+.hero-scroll {
+  height: var(--hero-scroll, 520vh);
+}
+
+@media (max-aspect-ratio: 95/100) {
+  .hero-scroll {
+    --hero-scroll: 400vh;
+  }
+}
+
+/* Wordless scroll affordance — a travelling highlight down a hairline rail.
+   Replaces the "Scroll to explore" label on tall frames, where the hero holds
+   no text at all until the sequence resolves. */
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+    opacity: 0;
+  }
+  40% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+  60% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+    opacity: 0;
+  }
+}
+
+.scroll-cue {
+  position: relative;
+  width: 1px;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.scroll-cue::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, #8b8e96);
+  animation: scroll-cue 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/*
+ * Range inputs.
+ *
+ * Resetting `appearance` is what lets the track and thumb be styled at all —
+ * but it also removes the thumb entirely in WebKit, and iOS Safari will not
+ * draw one back unless ::-webkit-slider-thumb is authored explicitly. Without
+ * these rules the financing sliders render as a bare track on every iPhone,
+ * with nothing to drag. `accent-color` is likewise ignored once appearance is
+ * reset, so the fill is drawn here too, driven by the --range-fill percentage
+ * each input sets from its own value.
+ *
+ * The 2.75rem box is the touch target (Apple's 44px minimum); the visible
+ * track stays a 6px hairline inside it.
+ */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2.75rem;
+  background: transparent;
+  cursor: pointer;
+  /* The element owns horizontal drags; the page keeps vertical scrolling. */
+  touch-action: pan-y;
+}
+
+.range-input:focus {
+  outline: none;
+}
+
+.range-input::-webkit-slider-runnable-track {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #e11d2a 0%,
+    #e11d2a var(--range-fill, 0%),
+    #181b21 var(--range-fill, 0%),
+    #181b21 100%
+  );
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.375rem;
+  width: 1.375rem;
+  /* Centres the thumb on the track: (track height - thumb height) / 2. */
+  margin-top: -0.5rem;
+  border-radius: 9999px;
+  background: #f7f7f8;
+  border: 3px solid #e11d2a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+.range-input::-moz-range-track {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: #181b21;
+}
+
+.range-input::-moz-range-progress {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: #e11d2a;
+}
+
+.range-input::-moz-range-thumb {
+  height: 1.375rem;
+  width: 1.375rem;
+  border-radius: 9999px;
+  background: #f7f7f8;
+  border: 3px solid #e11d2a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+.range-input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(225, 29, 42, 0.4);
+}
+
+.range-input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(225, 29, 42, 0.4);
+}

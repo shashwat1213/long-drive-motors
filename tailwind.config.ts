@@ -19,6 +19,10 @@ const config: Config = {
       lg: '1024px',
       xl: '1280px',
       '2xl': '1536px',
+      // Tall frames — phones upright, and tablets in portrait. Matches
+      // PORTRAIT_ASPECT_MAX in src/three/hero/heroShots.ts, so the hero's
+      // layout and its camera sequence always agree on what "portrait" means.
+      tall: { raw: '(max-aspect-ratio: 95/100)' },
     },
     extend: {
       colors: {

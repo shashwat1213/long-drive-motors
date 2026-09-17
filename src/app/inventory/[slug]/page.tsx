@@ -5,7 +5,7 @@ import { Container, Section } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema, vehicleSchema } from '@/lib/seo/structured-data';
-import { buildMetadata } from '@/lib/seo/metadata';
+import { buildMetadata, generatedCard } from '@/lib/seo/metadata';
 import { getVehicleBySlug, getVehicleSlugs, getFeaturedVehicles } from '@/lib/content';
 import { formatMileage, formatPrice } from '@/lib/utils/format';
 import { VehicleGallery } from '@/components/inventory/VehicleGallery';
@@ -34,11 +34,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 
   const title = vehicle.year + ' ' + vehicle.make + ' ' + vehicle.model + ' ' + vehicle.trim;
+  // Not the listing art: it is placeholder SVG, which social platforms refuse
+  // to render. This route's opengraph-image generates a real PNG card from the
+  // listing's own facts instead.
   return buildMetadata({
     title,
     description: vehicle.description,
     path: '/inventory/' + vehicle.slug,
-    image: vehicle.images[0]?.src,
+    image: generatedCard('/inventory/' + vehicle.slug),
   });
 }
 
