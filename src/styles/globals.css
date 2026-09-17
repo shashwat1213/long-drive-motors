@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink-900 text-fog-100 font-sans antialiased;
+    /* Subtle depth: a faint radial vignette so flat sections still read premium. */
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, rgba(225, 29, 42, 0.06), transparent 60%),
+      radial-gradient(100% 100% at 50% 120%, rgba(17, 19, 23, 0.9), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-fog-50;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Consistent, visible focus for keyboard users across the whole app. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-ink-900 rounded-sm;
+  }
+
+  ::selection {
+    background: rgba(225, 29, 42, 0.3);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* Reusable premium wrappers used across sections. */
+  .container-content {
+    @apply mx-auto w-full max-w-content px-gutter;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-medium uppercase tracking-eyebrow text-brand-400;
+  }
+
+  /* Hairline divider consistent with the design system. */
+  .hairline {
+    @apply border-line;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/*
+ * Global reduced-motion contract.
+ * Anything relying on motion for meaning must still be usable when this
+ * applies. GSAP timelines additionally check the useReducedMotion hook.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

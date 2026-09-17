@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#181B21"/><stop offset="100%" stop-color="#0A0B0D"/>
+  </linearGradient></defs>
+  <rect width="800" height="500" fill="url(#lg)"/>
+  <rect x="1" y="1" width="798" height="498" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  <text x="40" y="60" font-family="Arial, sans-serif" font-size="13" letter-spacing="4" fill="#E11D2A">INTERIOR</text>
+  <text x="40" y="440" font-family="Arial, sans-serif" font-size="18" fill="#8B8E96">Monarch Lux Sedan 2023</text>
+  <text x="40" y="466" font-family="Arial, sans-serif" font-size="12" fill="#63666E">Placeholder image · prototype</text>
+</svg>
